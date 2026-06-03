@@ -1,0 +1,70 @@
+{
+  "clients": [
+    {
+      "name": "John Doe",
+      "email": "john@example.com"
+    },
+    {
+      "name": "Alice Smith",
+      "email": "alice@example.com"
+    }
+  ],
+  "products": [
+    {
+      "name": "IPhone 15",
+      "sku": "IPHONE-15",
+      "price": 1000.0
+    },
+    {
+      "name": "MacBook Pro",
+      "sku": "MACBOOK-PRO",
+      "price": 2500.0
+    },
+    {
+      "name": "AirPods Pro",
+      "sku": "AIRPODS-PRO",
+      "price": 250.0
+    }
+  ],
+  "warehouses": [
+    {
+      "name": "Main Warehouse"
+    },
+    {
+      "name": "Second Warehouse"
+    }
+  ],
+  "stock_items": [
+    {
+      "warehouse_name": "Main Warehouse",
+      "product_sku": "IPHONE-15",
+      "quantity": 10
+    },
+    {
+      "warehouse_name": "Main Warehouse",
+      "product_sku": "MACBOOK-PRO",
+      "quantity": 5
+    },
+    {
+      "warehouse_name": "Second Warehouse",
+      "product_sku": "AIRPODS-PRO",
+      "quantity": 20
+    }
+  ],
+  "orders": [
+    {
+      "client_email": "john@example.com",
+      "warehouse_name": "Main Warehouse",
+      "items": [
+        {
+          "product_sku": "IPHONE-15",
+          "quantity": 2
+        },
+        {
+          "product_sku": "MACBOOK-PRO",
+          "quantity": 1
+        }
+      ]
+    }
+  ]
+}

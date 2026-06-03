@@ -1,0 +1,102 @@
+name: web-app
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "40m"
+    max-file: "3"
+
+services:
+  db:
+    image: postgres:16.9
+    restart: unless-stopped
+    logging: *default-logging
+    shm_size: 8gb
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    command: [ "postgres", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres.conf:/etc/postgresql/postgresql.conf:ro
+    networks:
+      - default
+    healthcheck:
+      test: [ "CMD-SHELL", "PGPASSWORD=${POSTGRES_PASSWORD} pg_isready -U ${POSTGRES_USER} -q -p 5432 -d ${POSTGRES_DB} || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.24.1-p1
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "${PGBOUNCER_PORT:-5433}:5432"
+    environment:
+      IGNORE_STARTUP_PARAMETERS: statement_timeout,idle_in_transaction_session_timeout,extra_float_digits,application_name
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
+      POOL_MODE: transaction
+
+      MAX_CLIENT_CONN: 700 # How many clients does PgBouncer accept
+      DEFAULT_POOL_SIZE: 100 # real connections to Postgres
+      MIN_POOL_SIZE: 10
+      RESERVE_POOL_SIZE: 50 # reserve for peaks
+      RESERVE_POOL_TIMEOUT: 3
+
+      MAX_DB_CONNECTIONS: 800 # hard ceiling < 900 (leave ~100 for direct access/vacuum/etc.)
+
+      SERVER_IDLE_TIMEOUT: 600 # closes idle server connection after 10 minutes
+      CLIENT_IDLE_TIMEOUT: 60 # closes idle client connection after 1 minute
+      SERVER_LIFETIME: 3600 # recreates the server connection once per hour
+
+      AUTH_TYPE: scram-sha-256
+      ADMIN_USERS: ${POSTGRES_USER}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - default
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -h localhost -p 5432 -U ${POSTGRES_USER} || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: ../app
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+    environment:
+      DEBUG: False
+      # Service
+      SERVICE__NAMESPACE: web-app
+      SERVICE__NAME: web-app
+      SERVICE__VERSION: 0.1.0
+      SERVICE__STAGE: prod
+      # PostgreSQL
+      DATABASE__URI: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer:5432/${POSTGRES_DB}
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
+
+volumes:
+  postgres-data:
