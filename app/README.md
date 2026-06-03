@@ -1,1 +1,0 @@
-# Job ingestion service skeleton
