@@ -4,8 +4,7 @@ APP_DIR = app
 DB_SERVICE = test-db
 
 .PHONY: help \
-	test test-up test-down test-restart test-logs test-ps \
-	test-cov test-unit test-shell test-db-shell wait-test-db clean-test
+	test test-up test-down prod prod-clear
 
 help:
 	@echo "Available commands:"

@@ -1,4 +1,4 @@
-.PHONY: setup start start-dev init-migrations makemigrations migrate lint
+.PHONY: setup start-api-dev start-api-prod init-migrations makemigrations migrate lint test test-cov test-cov-html
 export PYTHONPATH := src
 
 ifneq (,$(wildcard .env))
@@ -13,7 +13,6 @@ setup:
 start-api-dev:
 	poetry run alembic -c migrations/alembic.ini upgrade head
 	poetry run uvicorn main:app --host 0.0.0.0 --port 8001 --reload
-
 
 start-api-prod:
 	poetry run alembic -c migrations/alembic.ini upgrade head
